@@ -3,8 +3,11 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from urllib.parse import quote_plus
 
-password = quote_plus("P@ssw0rd")
-SQLALCHEMY_DATABASE_URL = f"postgresql://admin:{password}@localhost:5432/nextdb"
+password = quote_plus("christofer26")
+#SQLALCHEMY_DATABASE_URL = f"postgresql://admin:{password}@localhost:5432/nextdb"
+
+SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:{password}@db.mnpyqqnmkimfbbnmgyal.supabase.co:5432/postgres"
+
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
