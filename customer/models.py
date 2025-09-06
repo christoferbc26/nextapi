@@ -8,8 +8,8 @@ class Customer(Base):
     customer_id = Column(Integer, primary_key=True, index=True)
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
-    phone = Column(String(20))
-    address = Column(Text)
+    phone = Column(String(20), nullable=True)
+    address = Column(Text, nullable=True)
     created_at = Column(TIMESTAMP, nullable=False, server_default=text('NOW()'))
-    # Usar quotes para la palabra reservada 'update'
-    update = Column('"update"', TIMESTAMP)
+    # Usar quotes para la palabra reservada 'update' y hacerla nullable
+    update_at = Column(TIMESTAMP, nullable=True)
