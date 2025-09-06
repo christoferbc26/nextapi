@@ -3,7 +3,7 @@ from .database import Base
 
 class Customer(Base):
     __tablename__ = "customer"
-    __table_args__ = {"schema": "sales"}
+    __table_args__ = {"schema": "sales"}  # La tabla está en el schema sales
 
     customer_id = Column(Integer, primary_key=True, index=True)
     first_name = Column(String(100), nullable=False)
@@ -11,4 +11,5 @@ class Customer(Base):
     phone = Column(String(20))
     address = Column(Text)
     created_at = Column(TIMESTAMP, nullable=False, server_default=text('NOW()'))
-    update = Column(TIMESTAMP)
+    # Usar quotes para la palabra reservada 'update'
+    update = Column('"update"', TIMESTAMP)

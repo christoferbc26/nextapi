@@ -13,6 +13,11 @@ router = APIRouter(
     tags=["customers"],
 )
 
+@router.get("/test")
+def test_endpoint():
+    """Endpoint de prueba simple sin base de datos"""
+    return {"message": "Customer endpoints funcionando correctamente", "status": "ok"}
+
 # Usar la función get_db del módulo database
 from .database import get_db
 
