@@ -19,6 +19,30 @@ def test_endpoint():
     """Endpoint de prueba simple sin base de datos"""
     return {"message": "Customer endpoints funcionando correctamente", "status": "ok"}
 
+@router.get("/config")
+def show_config():
+    """Endpoint para mostrar la configuración de base de datos (sin conexión)"""
+    import os
+    from database import get_database_url
+    
+    database_url = get_database_url()
+    # Ocultar password para seguridad
+    safe_url = database_url
+    if "@" in safe_url:
+        parts = safe_url.split("@")
+        user_pass = parts[0].split(":")
+        if len(user_pass) >= 3:  # postgresql://user:pass
+            safe_url = f"{user_pass[0]}:{user_pass[1]}:***@{parts[1]}"
+    
+    return {
+        "database_url": safe_url,
+        "postgres_url": os.getenv("POSTGRES_URL", "No encontrada")[:50] + "...",
+        "postgres_host": os.getenv("POSTGRES_HOST", "No encontrada"),
+        "using_database_url": "DATABASE_URL" in os.environ,
+        "using_postgres_url": "POSTGRES_URL" in os.environ,
+        "status": "ok"
+    }
+
 @router.get("/debug")
 def debug_database(db: Session = Depends(get_db)):
     """Endpoint de debug para probar la conexión a la base de datos"""
