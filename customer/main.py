@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import update
+from sqlalchemy import update, text
 from datetime import datetime
 from . import models, schemas, database
 from typing import List
@@ -17,6 +17,48 @@ router = APIRouter(
 def test_endpoint():
     """Endpoint de prueba simple sin base de datos"""
     return {"message": "Customer endpoints funcionando correctamente", "status": "ok"}
+
+@router.get("/debug")
+def debug_database(db: Session = Depends(get_db)):
+    """Endpoint de debug para probar la conexión a la base de datos"""
+    try:
+        # Probar consulta simple
+        result = db.execute(text("SELECT 1 as test"))
+        test_result = result.scalar()
+        
+        # Verificar si la tabla existe
+        table_check = db.execute(text("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'sales' 
+                AND table_name = 'customer'
+            )
+        """))
+        table_exists = table_check.scalar()
+        
+        # Verificar si el schema sales existe
+        schema_check = db.execute(text("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.schemata 
+                WHERE schema_name = 'sales'
+            )
+        """))
+        schema_exists = schema_check.scalar()
+        
+        return {
+            "message": "Conexión a base de datos exitosa",
+            "test_query": test_result,
+            "sales_schema_exists": schema_exists,
+            "customer_table_exists": table_exists,
+            "status": "ok"
+        }
+        
+    except Exception as e:
+        return {
+            "message": "Error en la conexión a base de datos",
+            "error": str(e),
+            "status": "error"
+        }
 
 # Usar la función get_db del módulo database
 from .database import get_db
