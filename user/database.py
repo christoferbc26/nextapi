@@ -10,7 +10,12 @@ password = quote_plus("christofer26")
 SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:{password}@db.mnpyqqnmkimfbbnmgyal.supabase.co:5432/postgres"
 
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={
+        "sslmode": "require"
+    }
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

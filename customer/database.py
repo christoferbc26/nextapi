@@ -17,7 +17,12 @@ password = quote_plus("christofer26")
 SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:{password}@db.mnpyqqnmkimfbbnmgyal.supabase.co:5432/postgres"
 
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={
+        "sslmode": "require"
+    }
+)
 #engine es el objeto que gestina la conexión a la base de datos.
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 #es una clase de sesión que permite interactuar con la base de datos.
