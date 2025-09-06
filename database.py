@@ -24,7 +24,6 @@ def get_database_url():
             if "?" not in pooling_url:
                 pooling_params = [
                     "sslmode=require",
-                    "pgbouncer=true",  # Importante para pooling
                     "connect_timeout=30"
                 ]
                 pooling_url += "?" + "&".join(pooling_params)
@@ -49,7 +48,6 @@ def get_database_url():
     # Parámetros para pooling
     params = [
         "sslmode=require",
-        "pgbouncer=true",
         "connect_timeout=30"
     ]
     
@@ -69,10 +67,7 @@ def create_optimized_engine():
     connect_args = {
         "sslmode": "require",
         "connect_timeout": 30,
-        "application_name": "fastapi-vercel",
-        # Parámetros específicos para pgbouncer/connection pooling
-        "prepared_statement_cache_size": 0,  # Deshabilitar prepared statements para pgbouncer
-        "statement_cache_size": 0  # Deshabilitar statement cache para pgbouncer
+        "application_name": "fastapi-vercel"
     }
     
     # NullPool es lo mejor para pgbouncer y serverless
