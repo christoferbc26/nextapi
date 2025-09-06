@@ -5,21 +5,16 @@ from datetime import datetime
 from . import models, schemas, database
 from typing import List
 
-# Create database tables
-models.Base.metadata.create_all(bind=database.engine)
+# Las tablas deben existir previamente en Supabase
+# No crear tablas automáticamente en serverless para evitar errores de conexión
 
 router = APIRouter(
     prefix="/customers",
     tags=["customers"],
 )
 
-# Dependency
-def get_db():
-    db = next(database.get_db())
-    try:
-        yield db
-    finally:
-        db.close()
+# Usar la función get_db del módulo database
+from .database import get_db
 
 @router.post("/", response_model=schemas.Customer)
 #este endpoint respondera a peticiones en la ruta /customers/, luego la respuesta 

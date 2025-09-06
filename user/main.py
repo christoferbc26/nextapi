@@ -6,9 +6,8 @@ from typing import List
 from . import models, schemas, auth
 from .database import get_db
 
-# Crear las tablas de la base de datos
-from .database import engine
-models.Base.metadata.create_all(bind=engine)
+# Las tablas deben existir previamente en Supabase
+# No crear tablas automáticamente en serverless para evitar errores de conexión
 
 router = APIRouter(
     prefix="/auth",
