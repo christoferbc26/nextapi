@@ -1,29 +1,5 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from urllib.parse import quote_plus
+# Importar configuración unificada de base de datos
+from database import engine, SessionLocal, Base, get_db, test_connection
 
-password = quote_plus("christofer26")
-#password = quote_plus("P@ssw0rd")
-#SQLALCHEMY_DATABASE_URL = f"postgresql://admin:{password}@localhost:5432/nextdb"
-
-SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:{password}@db.mnpyqqnmkimfbbnmgyal.supabase.co:5432/postgres"
-
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={
-        "sslmode": "require"
-    }
-)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
-
-# Dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Re-exportar para mantener compatibilidad
+__all__ = ['engine', 'SessionLocal', 'Base', 'get_db', 'test_connection']
