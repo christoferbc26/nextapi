@@ -2,7 +2,7 @@
 Configuración unificada de base de datos optimizada para entorno serverless (Vercel)
 """
 import os
-from sqlalchemy import create_engine, pool
+from sqlalchemy import create_engine, pool, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from urllib.parse import quote_plus
@@ -12,6 +12,18 @@ def get_database_url():
     # Intentar obtener la URL completa de la variable de entorno
     database_url = os.getenv("DATABASE_URL")
     if database_url:
+        # Añadir parámetros para resolver problemas de IPv6 si no están presentes
+        if "?" not in database_url:
+            # Parámetros para optimizar la conexión en Vercel
+            params = [
+                "sslmode=require",
+                "target_session_attrs=read-write",
+                "connect_timeout=30",
+                "keepalives_idle=600",
+                "keepalives_interval=30",
+                "keepalives_count=3"
+            ]
+            database_url += "?" + "&".join(params)
         return database_url
     
     # Si no existe, construir la URL usando variables individuales
@@ -24,24 +36,81 @@ def get_database_url():
     # Codificar la contraseña para URL
     encoded_password = quote_plus(db_password)
     
-    return f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
+    # Parámetros optimizados para Vercel
+    params = [
+        "sslmode=require",
+        "target_session_attrs=read-write",
+        "connect_timeout=30",
+        "keepalives_idle=600",
+        "keepalives_interval=30",
+        "keepalives_count=3"
+    ]
+    
+    base_url = f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
+    return f"{base_url}?{'&'.join(params)}"
 
 # Configuración optimizada para serverless
 SQLALCHEMY_DATABASE_URL = get_database_url()
 
 # Configuración del engine optimizada para Vercel/serverless
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    poolclass=pool.NullPool,  # Importante para serverless - evita problemas de conexión
-    connect_args={
+# Solución para el error "Cannot assign requested address" en IPv6
+def create_optimized_engine():
+    """
+    Crea un engine con configuración específica para resolver problemas de IPv6 en Vercel
+    """
+    # Configuración de conexión optimizada para Vercel
+    connect_args = {
         "sslmode": "require",
-        "connect_timeout": 10,  # Timeout de conexión más corto
-        "application_name": "fastapi-vercel",  # Identificar la aplicación en logs
-    },
-    echo=False,  # Cambiar a True solo para debugging
-    pool_pre_ping=True,  # Verifica conexiones antes de usarlas
-    pool_recycle=300,  # Recicla conexiones cada 5 minutos
-)
+        "connect_timeout": 30,  # Aumentado para dar más tiempo
+        "application_name": "fastapi-vercel",
+        "keepalives_idle": 600,
+        "keepalives_interval": 30,
+        "keepalives_count": 3,
+        # Parámetros adicionales para resolver problemas de IPv6
+        "target_session_attrs": "read-write"
+    }
+    
+    try:
+        # Intentar crear engine con configuración completa
+        engine = create_engine(
+            SQLALCHEMY_DATABASE_URL,
+            poolclass=pool.StaticPool,  # Cambiar a StaticPool para serverless
+            pool_size=1,
+            max_overflow=0,
+            connect_args=connect_args,
+            echo=False,
+            pool_pre_ping=True,
+            pool_recycle=3600,  # 1 hora
+            pool_reset_on_return='commit'
+        )
+        
+        # Probar la conexión
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        
+        print("✅ Engine creado exitosamente con StaticPool")
+        return engine
+        
+    except Exception as e:
+        print(f"⚠️ Fallo con StaticPool, intentando NullPool: {e}")
+        
+        # Fallback a NullPool si StaticPool falla
+        try:
+            engine = create_engine(
+                SQLALCHEMY_DATABASE_URL,
+                poolclass=pool.NullPool,
+                connect_args=connect_args,
+                echo=False,
+                isolation_level="AUTOCOMMIT"
+            )
+            print("✅ Engine creado exitosamente con NullPool")
+            return engine
+        except Exception as e2:
+            print(f"❌ Error crítico creando engine: {e2}")
+            raise e2
+
+# Crear el engine usando la función optimizada
+engine = create_optimized_engine()
 
 # SessionLocal con configuración para serverless
 SessionLocal = sessionmaker(
