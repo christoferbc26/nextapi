@@ -55,24 +55,15 @@ def create_optimized_engine():
     }
     
     # NullPool es lo mejor para pgbouncer y serverless
-    try:
-        engine = create_engine(
-            SQLALCHEMY_DATABASE_URL,
-            poolclass=pool.NullPool,  # NullPool es ideal para pgbouncer
-            connect_args=connect_args,
-            echo=False,  # Cambiar a True para debug si es necesario
-        )
-        
-        # Probar la conexión
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
-        
-        print("✅ Engine creado exitosamente con Connection Pooling")
-        return engine
-        
-    except Exception as e:
-        print(f"❌ Error creando engine con pooling: {e}")
-        raise e
+    engine = create_engine(
+        SQLALCHEMY_DATABASE_URL,
+        poolclass=pool.NullPool,  # NullPool es ideal para pgbouncer
+        connect_args=connect_args,
+        echo=False,  # Cambiar a True para debug si es necesario
+    )
+    
+    print("✅ Engine creado exitosamente (conexión se probará cuando se use)")
+    return engine
 
 # Crear el engine usando la función optimizada
 engine = create_optimized_engine()
