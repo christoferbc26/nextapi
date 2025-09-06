@@ -12,38 +12,45 @@ def get_database_url():
     # Intentar obtener la URL completa de la variable de entorno
     database_url = os.getenv("DATABASE_URL")
     if database_url:
-        # Añadir parámetros para resolver problemas de IPv6 si no están presentes
-        if "?" not in database_url:
-            # Parámetros para optimizar la conexión en Vercel
-            params = [
-                "sslmode=require",
-                "target_session_attrs=read-write",
-                "connect_timeout=30",
-                "keepalives_idle=600",
-                "keepalives_interval=30",
-                "keepalives_count=3"
-            ]
-            database_url += "?" + "&".join(params)
+        # SOLUCIÓN IPv6: Cambiar a usar Connection Pooling de Supabase
+        # Reemplazar conexión directa con pooling para evitar problemas IPv6
+        if "db.mnpyqqnmkimfbbnmgyal.supabase.co:5432" in database_url:
+            # Cambiar a connection pooling (puerto 6543 en lugar de 5432)
+            pooling_url = database_url.replace(
+                "db.mnpyqqnmkimfbbnmgyal.supabase.co:5432",
+                "aws-0-us-east-1.pooler.supabase.com:6543"
+            )
+            # Añadir parámetros específicos para pooling
+            if "?" not in pooling_url:
+                pooling_params = [
+                    "sslmode=require",
+                    "pgbouncer=true",  # Importante para pooling
+                    "connect_timeout=30"
+                ]
+                pooling_url += "?" + "&".join(pooling_params)
+            
+            print(f"ℹ️ Usando Supabase Connection Pooling para resolver IPv6")
+            return pooling_url
+        
+        # Si no es la URL problemática, usar tal como está
         return database_url
     
-    # Si no existe, construir la URL usando variables individuales
-    db_host = os.getenv("DB_HOST", "db.mnpyqqnmkimfbbnmgyal.supabase.co")
-    db_port = os.getenv("DB_PORT", "5432")
+    # Si no existe DATABASE_URL, construir usando variables individuales
+    # Usar connection pooling por defecto
+    db_host = os.getenv("DB_HOST", "aws-0-us-east-1.pooler.supabase.com")
+    db_port = os.getenv("DB_PORT", "6543")  # Puerto de pooling
     db_name = os.getenv("DB_NAME", "postgres")
     db_user = os.getenv("DB_USER", "postgres")
-    db_password = os.getenv("DB_PASSWORD", "christofer26")  # Fallback para desarrollo
+    db_password = os.getenv("DB_PASSWORD", "christofer26")
     
     # Codificar la contraseña para URL
     encoded_password = quote_plus(db_password)
     
-    # Parámetros optimizados para Vercel
+    # Parámetros para pooling
     params = [
         "sslmode=require",
-        "target_session_attrs=read-write",
-        "connect_timeout=30",
-        "keepalives_idle=600",
-        "keepalives_interval=30",
-        "keepalives_count=3"
+        "pgbouncer=true",
+        "connect_timeout=30"
     ]
     
     base_url = f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
@@ -58,56 +65,35 @@ def create_optimized_engine():
     """
     Crea un engine con configuración específica para resolver problemas de IPv6 en Vercel
     """
-    # Configuración de conexión optimizada para Vercel
+    # Configuración de conexión optimizada para Connection Pooling de Supabase
     connect_args = {
         "sslmode": "require",
-        "connect_timeout": 30,  # Aumentado para dar más tiempo
+        "connect_timeout": 30,
         "application_name": "fastapi-vercel",
-        "keepalives_idle": 600,
-        "keepalives_interval": 30,
-        "keepalives_count": 3,
-        # Parámetros adicionales para resolver problemas de IPv6
-        "target_session_attrs": "read-write"
+        # Parámetros específicos para pgbouncer/connection pooling
+        "prepared_statement_cache_size": 0,  # Deshabilitar prepared statements para pgbouncer
+        "statement_cache_size": 0  # Deshabilitar statement cache para pgbouncer
     }
     
+    # NullPool es lo mejor para pgbouncer y serverless
     try:
-        # Intentar crear engine con configuración completa
         engine = create_engine(
             SQLALCHEMY_DATABASE_URL,
-            poolclass=pool.StaticPool,  # Cambiar a StaticPool para serverless
-            pool_size=1,
-            max_overflow=0,
+            poolclass=pool.NullPool,  # NullPool es ideal para pgbouncer
             connect_args=connect_args,
-            echo=False,
-            pool_pre_ping=True,
-            pool_recycle=3600,  # 1 hora
-            pool_reset_on_return='commit'
+            echo=False,  # Cambiar a True para debug si es necesario
         )
         
         # Probar la conexión
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         
-        print("✅ Engine creado exitosamente con StaticPool")
+        print("✅ Engine creado exitosamente con Connection Pooling")
         return engine
         
     except Exception as e:
-        print(f"⚠️ Fallo con StaticPool, intentando NullPool: {e}")
-        
-        # Fallback a NullPool si StaticPool falla
-        try:
-            engine = create_engine(
-                SQLALCHEMY_DATABASE_URL,
-                poolclass=pool.NullPool,
-                connect_args=connect_args,
-                echo=False,
-                isolation_level="AUTOCOMMIT"
-            )
-            print("✅ Engine creado exitosamente con NullPool")
-            return engine
-        except Exception as e2:
-            print(f"❌ Error crítico creando engine: {e2}")
-            raise e2
+        print(f"❌ Error creando engine con pooling: {e}")
+        raise e
 
 # Crear el engine usando la función optimizada
 engine = create_optimized_engine()
