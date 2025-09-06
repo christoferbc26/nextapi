@@ -26,11 +26,11 @@ def get_database_url():
         return database_url
     
     # Fallback si no existe DATABASE_URL (desarrollo local)
-    db_host = os.getenv("DB_HOST", "db.mnpyqqnmkimfbbnmgyal.supabase.co")
-    db_port = os.getenv("DB_PORT", "5432")
+    db_host = os.getenv("DB_HOST", "db.frvltlkfrgisqznwuuss.supabase.co")
+    db_port = os.getenv("DB_PORT", "6543")
     db_name = os.getenv("DB_NAME", "postgres")
     db_user = os.getenv("DB_USER", "postgres")
-    db_password = os.getenv("DB_PASSWORD", "christofer26")
+    db_password = os.getenv("DB_PASSWORD", "6cif08t4gNMIuwxF")
     
     # Codificar la contraseña para URL
     encoded_password = quote_plus(db_password)
