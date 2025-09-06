@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import update, text
 from datetime import datetime
 from . import models, schemas, database
+from .database import get_db
 from typing import List
 
 # Las tablas deben existir previamente en Supabase
@@ -60,8 +61,7 @@ def debug_database(db: Session = Depends(get_db)):
             "status": "error"
         }
 
-# Usar la función get_db del módulo database
-from .database import get_db
+# get_db ya está importado en la parte superior
 
 @router.post("/", response_model=schemas.Customer)
 #este endpoint respondera a peticiones en la ruta /customers/, luego la respuesta 
