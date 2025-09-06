@@ -9,6 +9,15 @@ from user.main import router as auth_router
 # Crear nueva instancia de FastAPI
 app = FastAPI(title="NextAPI", description="API para aplicación Next.js")
 
+# Endpoint de prueba en la raíz
+@app.get("/")
+def root():
+    return {"message": "NextAPI funcionando correctamente", "status": "ok", "version": "1.0"}
+
+@app.get("/test")
+def test():
+    return {"message": "Endpoint de prueba funcionando", "status": "ok"}
+
 # Configurar CORS
 app.add_middleware(
     CORSMiddleware,
