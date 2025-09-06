@@ -27,7 +27,7 @@ app.add_middleware(
         "http://localhost:3001",
         "http://127.0.0.1:3001",
         "https://*.vercel.app",  # Para tu aplicación en Vercel
-        "https://nextapi-christoferbc26.vercel.app",  # Reemplaza con tu dominio exacto de Vercel
+        "https://nextapp-blue-delta.vercel.app", # Reemplaza con tu dominio exacto de Vercel
         "*"  # Temporalmente para debugging - REMOVER EN PRODUCCIÓN
     ],
     allow_credentials=True,
