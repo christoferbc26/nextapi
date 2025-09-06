@@ -12,6 +12,9 @@ def get_database_url():
     # Intentar obtener la URL completa de la variable de entorno
     database_url = os.getenv("DATABASE_URL")
     if database_url:
+        # Para Supabase, agregar parámetros adicionales si no están presentes
+        if "supabase.co" in database_url and "?" not in database_url:
+            database_url += "?sslmode=require&target_session_attrs=read-write"
         return database_url
     
     # Si no existe, construir la URL usando variables individuales
@@ -24,24 +27,59 @@ def get_database_url():
     # Codificar la contraseña para URL
     encoded_password = quote_plus(db_password)
     
-    return f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
+    # URL con parámetros optimizados para Supabase
+    return f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}?sslmode=require&target_session_attrs=read-write"
 
 # Configuración optimizada para serverless
 SQLALCHEMY_DATABASE_URL = get_database_url()
 
+# Importar configuración alternativa para casos problemáticos
+try:
+    from supabase_connection import create_supabase_engine, force_ipv4_connection
+    ALTERNATIVE_CONFIG_AVAILABLE = True
+except ImportError:
+    ALTERNATIVE_CONFIG_AVAILABLE = False
+
 # Configuración del engine optimizada para Vercel/serverless
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    poolclass=pool.NullPool,  # Importante para serverless - evita problemas de conexión
-    connect_args={
-        "sslmode": "require",
-        "connect_timeout": 10,  # Timeout de conexión más corto
-        "application_name": "fastapi-vercel",  # Identificar la aplicación en logs
-    },
-    echo=False,  # Cambiar a True solo para debugging
-    pool_pre_ping=True,  # Verifica conexiones antes de usarlas
-    pool_recycle=300,  # Recicla conexiones cada 5 minutos
-)
+# Intentar forzar IPv4 si está disponible
+if ALTERNATIVE_CONFIG_AVAILABLE:
+    try:
+        force_ipv4_connection()
+    except:
+        pass  # Continuar sin IPv4 forzado si falla
+
+# Crear engine con configuración optimizada
+try:
+    # Intentar con configuración alternativa primero si está disponible
+    if ALTERNATIVE_CONFIG_AVAILABLE and os.getenv("VERCEL"):
+        engine = create_supabase_engine()
+    else:
+        # Configuración estándar mejorada
+        engine = create_engine(
+            SQLALCHEMY_DATABASE_URL,
+            poolclass=pool.NullPool,  # Importante para serverless
+            connect_args={
+                "sslmode": "require",
+                "connect_timeout": 30,
+                "application_name": "fastapi-vercel",
+                "target_session_attrs": "read-write",
+                "gssencmode": "disable",
+                "options": "-c default_transaction_isolation=read committed"
+            },
+            echo=False,
+            pool_pre_ping=True,
+            pool_recycle=300,
+            execution_options={"isolation_level": "AUTOCOMMIT"}
+        )
+except Exception as e:
+    print(f"Warning: Failed to create optimized engine: {e}")
+    # Fallback a configuración básica
+    engine = create_engine(
+        SQLALCHEMY_DATABASE_URL,
+        poolclass=pool.NullPool,
+        connect_args={"sslmode": "require"},
+        echo=False
+    )
 
 # SessionLocal con configuración para serverless
 SessionLocal = sessionmaker(
