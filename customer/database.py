@@ -8,10 +8,10 @@ from sqlalchemy.orm import sessionmaker
 from urllib.parse import quote_plus
 #Codifica la contraseña para que sea segura en la URL de conexión.
 
-password = quote_plus("christofer26")
+password = quote_plus("Sb@12038211")
 #Codifica la contraseña para evitar problemas con caracteres especiales.
 
-SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:{password}@db.mnpyqqnmkimfbbnmgyal.supabase.co:5432/postgres"
+SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:{password}@db.edgjrbcwbxkcwkjvnrsm.supabase.co:5432/postgres"
 #Codifica la contraseña para evitar problemas con caracteres especiales.
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
