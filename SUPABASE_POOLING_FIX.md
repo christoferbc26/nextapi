@@ -1,10 +1,10 @@
 # 🔧 Solución IPv6: Usar Supabase Connection Pooling
 
 ## ❌ Problema
-Error: `Cannot assign requested address` en Vercel cuando usa IPv6 de Supabase.
+Error: `Cannot assign requested address` o `Tenant or user not found` en Vercel.
 
 ## ✅ Solución
-Usar **Connection Pooling** de Supabase en lugar de conexión directa a PostgreSQL.
+Usar **Connection Pooling** de Supabase con la URL exacta de TU proyecto.
 
 ## 📝 Pasos para solucionarlo:
 

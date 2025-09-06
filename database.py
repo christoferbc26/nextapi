@@ -9,35 +9,25 @@ from urllib.parse import quote_plus
 
 # Configuración de variables de entorno con fallbacks para desarrollo local
 def get_database_url():
-    # Intentar obtener la URL completa de la variable de entorno
+    # Obtener la URL completa de la variable de entorno
     database_url = os.getenv("DATABASE_URL")
     if database_url:
-        # SOLUCIÓN IPv6: Cambiar a usar Connection Pooling de Supabase
-        # Reemplazar conexión directa con pooling para evitar problemas IPv6
-        if "db.mnpyqqnmkimfbbnmgyal.supabase.co:5432" in database_url:
-            # Cambiar a connection pooling (puerto 6543 en lugar de 5432)
-            pooling_url = database_url.replace(
-                "db.mnpyqqnmkimfbbnmgyal.supabase.co:5432",
-                "aws-0-us-east-1.pooler.supabase.com:6543"
-            )
-            # Añadir parámetros específicos para pooling
-            if "?" not in pooling_url:
-                pooling_params = [
-                    "sslmode=require",
-                    "connect_timeout=30"
-                ]
-                pooling_url += "?" + "&".join(pooling_params)
-            
-            print(f"ℹ️ Usando Supabase Connection Pooling para resolver IPv6")
-            return pooling_url
+        # Usar exactamente la URL proporcionada (debe ser la de Connection Pooling)
+        # Añadir parámetros solo si no están presentes
+        if "?" not in database_url:
+            # Parámetros básicos para pooling
+            params = [
+                "sslmode=require",
+                "connect_timeout=30"
+            ]
+            database_url += "?" + "&".join(params)
         
-        # Si no es la URL problemática, usar tal como está
+        print(f"ℹ️ Usando DATABASE_URL configurada")
         return database_url
     
-    # Si no existe DATABASE_URL, construir usando variables individuales
-    # Usar connection pooling por defecto
-    db_host = os.getenv("DB_HOST", "aws-0-us-east-1.pooler.supabase.com")
-    db_port = os.getenv("DB_PORT", "6543")  # Puerto de pooling
+    # Fallback si no existe DATABASE_URL (desarrollo local)
+    db_host = os.getenv("DB_HOST", "db.mnpyqqnmkimfbbnmgyal.supabase.co")
+    db_port = os.getenv("DB_PORT", "5432")
     db_name = os.getenv("DB_NAME", "postgres")
     db_user = os.getenv("DB_USER", "postgres")
     db_password = os.getenv("DB_PASSWORD", "christofer26")
@@ -45,14 +35,8 @@ def get_database_url():
     # Codificar la contraseña para URL
     encoded_password = quote_plus(db_password)
     
-    # Parámetros para pooling
-    params = [
-        "sslmode=require",
-        "connect_timeout=30"
-    ]
-    
     base_url = f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
-    return f"{base_url}?{'&'.join(params)}"
+    return f"{base_url}?sslmode=require&connect_timeout=30"
 
 # Configuración optimizada para serverless
 SQLALCHEMY_DATABASE_URL = get_database_url()
